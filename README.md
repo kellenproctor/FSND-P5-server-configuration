@@ -3,14 +3,17 @@
 ### IP Address
 52.37.15.134
 
+
 ### SSH Port
 2200
+
 
 ### Complete URL
 [Link to the Completed Website](http://ec2-52-37-15-134.us-west-2.compute.amazonaws.com/)
 
 Also here for copy and paste:
 http://ec2-52-37-15-134.us-west-2.compute.amazonaws.com/
+
 
 ### Configuration Summary
 OK, so I'm going to take this step by step, highlighting both the way I got everything to work, in addition to any errors or issues I got stuck on. There were quite a few.
@@ -28,15 +31,16 @@ Norbert does mention that this is basically a walkthrough, and it is very easy t
 
 Also, before we dive into this, hats off to Digital Ocean for some fantastic Community tutorials. I think most of the links in the Resource Lists, and some other ones I used, came from them. Also, thanks a bunch to Michael for the Configuring Linux Web Servers class. That was tremendously helpful to get up to speed. Alright, here we go:
 
-####Basic Configuration
-######Launch Virtual Machine
-I set up the Virtual Machine, followed steps 1-5 in the Udacity Development environment guide, no brainer.
+
+#### Basic Configuration
+###### Launch Virtual Machine
+I set up the Virtual Machine, followed steps 1-5 in the Udacity Development environment guide, no brainer. For the next few steps, I did everything as root, since I hadn't set up the user "grader" yet. Everything that follows, up until the creation of the user "grader" was done as "root"
 
 While working on the project, I realized that I had to use the `ssh` command a lot, and I remember setting up some sort of file to make it easier to do, so all you had to type was  
 `ssh udacity`  
 instead of the full  
 `ssh -i ~/.ssh/udacity_key.rsa root@52.37.15.134`  
-command (please note that I did set up a grader user, and most of the work done past the initial stages were with the grader user and `sudo`, this is just for example). So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it 
+command. So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it 
 ```bash
 Host udacity  
    Hostname 52.37.15.134  
@@ -47,11 +51,55 @@ Host udacity
 This was super helpful. Especially for quickly adding a bash environment for debugging (explained later)
 
 ---
-######Add User "grader"
+###### Update currently installed packages
+Thanks to Michael, and the Configuring Linux Web Servers class, this was simply the following:
+```
+apt-get update     # To update ubuntu's package lists.
+apt-get upgrade    # To actually upgrade the packages.
+apt-get autoremove # To remove any unnecessary packages.
+```
+
+---
+###### Configure local timezone to UTC
+This was done automatically when the virtual machine was launched. I don't know why, but I double checked this after reading [Ubuntu's Time Management Docs](https://help.ubuntu.com/community/UbuntuTime#Using_the_Command_Line_.28terminal.29). In essence:
+```
+cat /etc/timezone # to show the current timezone setting
+```
+
+---
+###### Add User "grader"
 The Udacity course went over this very well. So did this Digital Ocean tutorial: [How to Add and Delete Users on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps). First, since we're still logged in as root:
 ```
+# Create the user grader and use "grader" as the password,
+# skipping the remaining boxes for additional information
 adduser grader
+
+# also typing "y" and hitting enter to finish.
 ```
+
+---
+###### Grant "grader" sudo permissions
+Again, Michael did a great job of covering this in the class. I also want to note that a lot of the resource lists refer to [this Digital Ocean article on adding and deleting users](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps), which details how to use `visudo` for accomplishing this, in addition to methods for assigned users to the group `%sudo`, but I used Michael's method of creating a file in `/etc/sudoers.d/` folder instead.  
+```
+# Create 'grader' file in /etc/sudoers.d/ directory
+cd /etc/sudoers.d/
+touch grader
+nano grader
+```
+And adding the following line
+```
+grader ALL=(ALL) NOPASSWD:ALL
+```
+
+#### Securing the Server
+OK, so I had about two hours of fun on this step before figuring out the solution below. I explain my mistake towards the end, but let's start with the correct configuration
+
+###### Generating Keygen pair for 'grader'
+
+
+
+
+
 
 
 
@@ -66,7 +114,10 @@ adduser grader
 ####SSH
 [Nerderati: Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/)  
 
-####Add User
+####Timezone
+[Ubuntu: Time Management Docs](https://help.ubuntu.com/community/UbuntuTime#Using_the_Command_Line_.28terminal.29)
+
+####Add User/sudo permissions
 [Digital Ocean: How to Add and Delete Users on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps)
 
 ####Markdown

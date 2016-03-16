@@ -31,10 +31,10 @@ Also, before we dive into this, hats off to Digital Ocean for some fantastic Com
 ####Basic Configuration
 1. Set up the Virtual Machine, followed steps 1-5 in the Udacity Development environment guide, no brainer.
 2. While working on the project, I realized that I had to use the `ssh` command a lot, and I remember setting up some sort of file to make it easier to do, so all you had to type was  
-`ssh udacity`  
-instead of the full  
-`ssh -i ~/.ssh/udacity_key.rsa root@52.37.15.134`  
-command (please note that I did set up a grader user, and most of the work done past the initial stages were with the grader user and `sudo`, this is just for example). So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it  
+   `ssh udacity`  
+   instead of the full  
+   `ssh -i ~/.ssh/udacity_key.rsa root@52.37.15.134`  
+   command (please note that I did set up a grader user, and most of the work done past the initial stages were with the grader user and `sudo`, this is just for example). So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it  
    ```bash
    Host udacity  
        Hostname 52.37.15.134  

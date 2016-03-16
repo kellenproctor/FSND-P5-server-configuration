@@ -29,8 +29,10 @@ Norbert does mention that this is basically a walkthrough, and it is very easy t
 Also, before we dive into this, hats off to Digital Ocean for some fantastic Community tutorials. I think most of the links in the Resource Lists, and some other ones I used, came from them. Also, thanks a bunch to Michael for the Configuring Linux Web Servers class. That was tremendously helpful to get up to speed. Alright, here we go:
 
 ####Basic Configuration
-1. Set up the Virtual Machine, followed steps 1-5 in the Udacity Development environment guide, no brainer.
-2. While working on the project, I realized that I had to use the `ssh` command a lot, and I remember setting up some sort of file to make it easier to do, so all you had to type was `ssh udacity` instead of the full `ssh -i ~/.ssh/udacity_key.rsa root@52.37.15.134` command (please note that I did set up a grader user, and most of the work done past the initial stages were with the grader user and `sudo`, this is just for example). So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it 
+######Launch Virtual Machine
+I set up the Virtual Machine, followed steps 1-5 in the Udacity Development environment guide, no brainer.
+
+While working on the project, I realized that I had to use the `ssh` command a lot, and I remember setting up some sort of file to make it easier to do, so all you had to type was `ssh udacity` instead of the full `ssh -i ~/.ssh/udacity_key.rsa root@52.37.15.134` command (please note that I did set up a grader user, and most of the work done past the initial stages were with the grader user and `sudo`, this is just for example). So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it 
 ```bash
 Host udacity  
    Hostname 52.37.15.134  
@@ -38,8 +40,10 @@ Host udacity
    User root  
    IdentityFile ~/.ssh/udacity_key.rsa
 ```  
-This was super helpful  
-3. 
+This was super helpful. Especially for quickly adding a bash environment for debugging (explained later)
+
+######Add User Grader
+The Udacity course went over this very well. So did this Digital Ocean tutorial: [How to Add and Delete Users on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps). First
 
 
 
@@ -53,6 +57,9 @@ This was super helpful
 
 ####SSH
 [Nerderati: Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/)  
+
+####Add User
+[Digital Ocean: How to Add and Delete Users on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps)
 
 ####Markdown
 [Github: Adam Pritchard's Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)  

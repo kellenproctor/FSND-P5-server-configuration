@@ -41,11 +41,11 @@ While working on the project, I realized that I had to use the `ssh` command a l
 # I'm going to use "$" to designate shell commands
 $ ssh udacity
 ```  
-instead of the full
+instead of the full command
 ```
 $ ssh -i ~/.ssh/udacity_key.rsa root@52.37.15.134
 ```
-command. So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it
+So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it
 ```bash
 Host udacity  
    Hostname 52.37.15.134  

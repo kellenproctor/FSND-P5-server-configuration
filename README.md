@@ -205,7 +205,199 @@ To                         Action      From
 Good to go!
 
 #### Installing the Application
+The next few sections were covered by the Udacity course, but there were some great docs referred to by Allan and Kirk. I also took this in steps, setting up a couple test apps/files to make sure everything was working before cloning the project to the server. I'll talk about that as I go.
+###### Apache
+Install Apache:
+```
+$ sudo apt-get install apache2
+```
+Confirm that it's working by going to http://52.37.15.134. It works!
 
+---
+###### Apache mod_wsgi
+Install mod_wsgi:
+```
+$ sudo apt-get install libapache2-mod-wsgi
+```
+
+I edited the `/etc/apache2/sites-enabled/000-default.conf` file by adding `WSGIScriptAlias / /var/www/html/myapp.wsgi` before the closing `</VirtualHost>` line:
+```
+# Slightly redacted to save space
+<VirtualHost *:80>
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+        WSGIScriptAlias / /var/www/html/myapp.wsgi
+</VirtualHost>
+```
+and restart Apache:
+```
+$ sudo apache2ctl restart
+```
+
+Of course, now that apache is looking for a file at `/var/www/html/myapp.wsgi`, I set one up:
+```
+def application(environ, start_response):
+   status = '200 OK'
+   output = 'Hello World!'
+
+   response_headers = [('Content-type', 'text/plain'), ('Content-Length', str(len(output)))]
+   start_response(status, response_headers)
+
+   return [output]
+```
+and checked it by going to my site link. It worked! At this point, I know I have apache working, and I know I have mod_wsgi working with a sample app.
+
+---
+###### Flask app
+At this point, I basically just used an article from [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-deploy-a-flask-application-on-an-ubuntu-vps) to configure and test a sample Flask application with the current infrastructure. It worked, but for the sake of the size of this README, I'll just go over the flask dependencies. This was pretty simple. I basically ran all the commands in the `pg_config.sh` for P3. I jumped the gun a little bit, because I hadn't installed or configured the postgresql database, but the functionality was there:
+```
+$ sudo apt-get -qqy update
+$ sudo apt-get -qqy install python-flask python-sqlalchemy
+$ sudo apt-get -qqy install python-pip
+$ sudo pip install bleach
+$ sudo pip install oauth2client
+$ sudo pip install requests
+$ sudo pip install httplib2
+```
+
+---
+###### The `su -` command
+Before I get to postgresql, I'd like to digress. I found this article on [the su Command](http://www.linfo.org/su.html) to be incredibly useful when having to move between the user 'grader' and the user 'postgres' during the database configuration.
+```
+$ sudo su - grader
+# Do stuff as grader
+$ exit
+logout
+```
+I especially thought that the use of the dash '-' character in the command, whereby the new session of the user being switched to is opened with that user's shell and environment variables, was totally cool. It was also great to find out that you could simply `exit` or `logout` or `ctrl-d` to get back to your original shell session. Anyway, this was very useful for configuring the Postgresql database, as explained below.
+
+---
+###### POSTGRESQL - install
+Alright, I'm going to just refer you down to the Third Party Resources section below to check out the articles I used for this one. I basically got super confused about postgresql roles vs users for a long time, before it clicked. And reading a bunch of different articles, even the docs, helped to explain everything. So, here goes
+
+Install Postgresql:
+```
+$ sudo apt-get install postgresql
+
+# Digital Ocean recommends also installing the contrib package with some additional utilities
+$ sudo apt-get install postgresql-contrib
+
+# Also install psycopg2 while we are at it, so we can use postgresql with Flask
+$ sudo apt-get install pyscopg2
+```
+
+---
+###### POSTGRESQL - Do Not Allow Remote Connections
+This [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-secure-postgresql-on-an-ubuntu-vps) article was the basis for this part. Rather than copy and paste, let me just say that we can check the `/etc/postgresql/9.1/main/pg_hba.conf` file to see the postgresql network configuration. By default postgresql doesn't allow remote connections, which is awesome for this project. 
+
+---
+###### POSTGRESQL - configure
+At this point, we switch over to the user 'postgres' to set configure the postresql database:
+```
+$ sudo su - postgres
+```
+This should have opened a "new" shell environment. You can check this quickly by looking at the command line itself, it should say 'postgres' where it was 'grader'. If it does, excellent!
+
+Next we create a new postgresql user called 'catalog'. As the user 'postgres' at the normal command line, type:
+```
+$ createuser --interactive
+
+# Which prompts this message:
+Enter name of role to add: catalog
+Shall the new role be a superuser? (y/n) n
+Shall the new role be allowed to create databases? (y/n) y
+Shall the new role be allowed to create more new roles? (y/n) n
+```
+So basically, the prompt then sets up a postgres user called catalog with the attribute `Create DB` only. They have the ability to login, but they cannot create new roles or do any admin work. We can double check this by the following:
+```
+# Log into postgresql as postgres
+$ psql
+
+# Logged in
+
+postgres=# \du
+                             List of roles
+ Role name |                   Attributes                   | Member of
+-----------+------------------------------------------------+-----------
+ catalog   | Create DB                                      | {}
+ postgres  | Superuser, Create role, Create DB, Replication | {}
+ 
+```
+Finally, while still inside the postgresql command prompt, we add a password for the postgresql user 'catalog' as follows:
+```
+postgres=# ALTER ROLE catalog WITH PASSWORD 'password';
+```
+where 'password' stands for any password (simply 'catalog' in this case)
+
+Lastly, we create the 'catalog' database:
+```
+postgres=# CREATE DATABASE catalog WITH OWNER catalog;
+```
+Revoke all rights from public to edit the database, and grant those rights to 'catalog', exit, and exit from the 'postgres' user:
+```
+postgres=# REVOKE ALL ON SCHEMA public FROM public;
+postgres=# GRANT ALL ON SCHEMA public TO catalog;
+# Quit postgresql
+postgres=# \q
+
+# Back to shell
+
+$ exit
+```
+
+---
+###### POSTGRESQL - create linux user 'catalog'
+Great! So now that we have configured PostgreSQL, we also actually have to create a linux user called 'catalog'. This [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04) does a great job of explaining why. In short, Postgresql assumes that the current linux user will also have a matching role and database.
+
+Anyway, so we do the same commands as we did for 'grader', but for 'catalog':
+```
+# Create the user catalog and use "catalog" as the password,
+# skipping the remaining boxes for additional information
+
+$ adduser catalog
+```
+Confirm that the user 'catalog' exists, and we're all done with Postgresql!! For now...
+
+---
+###### IMPORTANT NOTE ON DESIGN DECISIONS - VIRTUALENV - VAGRANT
+By this point, a couple of the tutorials and some of the forum posts recommended installing virtualenv for the P5. However, by the time I got to those recommendations, I had already installed a bunch of the dependencies globally on the server. Also, I don't have much experience with virtualenv. So for the sake of simplicity, I bypassed all those steps. In addition, P3 as it was, came with the vagrant "wrapper" if you will. So I cleaned up the directory structure of P3 by removing the files related to vagrant, and created a new github repository that would be used for this project with the code from P3.
+
+---
+###### Git
+I ran the following commands:
+```
+
+
+
+
+
+
+###### The `tail -f` command
+Allan and Kirk both mention using some variation of the `tail -20` command to view the log files in `/var/log/apache2/error.log`. This basically echo the last 20 lines of that log file to the shell. However, I recall a better method of doing this in a different project I worked on. So I googled it, and sure enough, there was a great explanation on Superuser (a part of StackExchange) for the [tail -f command](http://superuser.com/questions/229627/linux-command-line-utility-for-watching-log-files-live). Bascially, by running
+```
+$ sudo tail -f /var/log/apache2/error.log
+```
+You get a 'live' view of the log file. So I could set up a shell session to run this while I tried to debug my app. Basically, the `-f` option enable monitoring, which sets up a process to update the shell if there are any changes made to the log file.
+
+
+### Minor Issues
+###### Hostname issue
+So, at some point, and I'm not sure when it started, there was this really annoying thing where every time I ran `sudo`, it would generate this message
+```
+sudo: unable to resolve host ip-10-20-11-238
+```
+Luckily Norbert ran into the same issue, and post an article from [Askubuntu](http://askubuntu.com/questions/59458/error-message-when-i-run-sudo-unable-to-resolve-host-none) about this. Basically, I had to add a line to `/etc/hosts/`:
+```
+127.0.0.1 localhost
+
+# Addition here
+127.0.1.1 ip-10-20-11-238
+```
+And that did the trick!
 
 
 
@@ -226,6 +418,29 @@ Good to go!
 
 ####Add User/sudo permissions
 [Digital Ocean: How to Add and Delete Users on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps)
+
+####Apache
+[Apache: Configuration Files, and Apache Docs in general](https://httpd.apache.org/docs/2.2/configuring.html)  
+[Ubuntu: HTTPD - Apache2 Web Server](https://help.ubuntu.com/lts/serverguide/httpd.html)
+
+####Flask
+[Digital Ocean: How to deploy a flask application on an ubuntu vps](https://www.digitalocean.com/community/tutorials/how-to-deploy-a-flask-application-on-an-ubuntu-vps)
+
+####Postgresql
+[PostgreSQL: Documentation](http://www.postgresql.org/docs/9.3/interactive/tutorial.html)  
+[Digital Ocean: How to install and use postgresql on ubuntu vps](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04)  
+[Digital Ocean: How to secure postgresql on ubuntu vps](https://www.digitalocean.com/community/tutorials/how-to-secure-postgresql-on-an-ubuntu-vps)  
+[Trackets Blog: PostgreSQL Basics by Example](http://blog.trackets.com/2013/08/19/postgresql-basics-by-example.html)  
+[Kill The Yak: Use PostgreSQL with Flask or Django](http://killtheyak.com/use-postgresql-with-django-flask/)
+
+####Tail -f command
+[Superuser (stackexchange): Linux command line utility for watching log files live?](http://superuser.com/questions/229627/linux-command-line-utility-for-watching-log-files-live)
+
+####SU command
+[The su Command](http://www.linfo.org/su.html)
+
+####Unable to Resolve Host x.x.x.x
+[Askubuntu: Error message when I run sudo: unable...](http://askubuntu.com/questions/59458/error-message-when-i-run-sudo-unable-to-resolve-host-none)
 
 ####Markdown
 [Github: Adam Pritchard's Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)  

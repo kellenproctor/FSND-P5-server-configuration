@@ -19,7 +19,8 @@ Also, first off, I want to point out the following were excellent resource lists
 
 
 
-[Test inline line ][1]
+[Test inline line ][^1]
 
 
-Google: http://google.com [1]: http://google.com
+Google: http://google.com
+[^1]: http://google.com

@@ -414,6 +414,29 @@ engine = create_engine("postgresql://catalog:catalog@localhost/catalog")
 Now the app can connect to the Postgresql database!!
 
 ---
+###### Initialize Database and Data
+Alright, now to actually create the tables, and initialize the database with some data!
+
+First, move to the `/catalog/` directory holding the app files:
+```
+$ mv /var/www/catalog/catalog/
+
+# Initialize the database
+$ python database_setup.py
+
+# Add some data
+$ python lotsofitems.py
+```
+No errors. Score!!
+
+---
+###### Rename application.py
+Simply, rename `application.py` to `__init__.py`
+```
+$ sudo mv application.py __init__.py
+```
+
+---
 ###### Reconfigure Apache Files
 I changed `/var/www/catalog.wsgi` to this:
 ```
@@ -536,6 +559,69 @@ Luckily Norbert ran into the same issue, and post an article from [Askubuntu](ht
 ```
 And that did the trick!
 
+---
+###### Issue with showItems function
+Alright, so I spent a day fixing this problem. I was super giddy about the site working in the first place, then my Dad tried to open up the description of a specific item... and it crashed. I couldn't figure out what the problem was. I eventually discovered, by looking at the logs and some judicious googling (that's really fun to say out loud) that my original code was throwing a `Keyerror: user_id blah blah`, so I modified my `__init__.py` file from this:
+```python
+# Show the specifics of an item
+@app.route('/catalog/<category_name>/<item_name>/')
+def showItem(category_name, item_name):
+    item = session.query(Items).filter_by(name=item_name).one()
+    categories = session.query(Category).all()
+    creator = getUserInfo(item.user_id)
+    user = getUserInfo(login_session['user_id'])
+    if 'username' not in login_session or creator.id != login_session['user_id']:
+        return render_template('publicitemdescription.html',
+                                item=item,
+                                category=category_name,
+                                categories=categories,
+                                user=user)
+    else:
+        return render_template('itemdescription.html',
+                                item=item,
+                                category=category_name,
+                                categories=categories,
+                                creator=creator,
+                                user=user)
+```
+to this:
+```python
+# Show the specifics of an item
+@app.route('/catalog/<category_name>/<item_name>/')
+def showItem(category_name, item_name):
+    item = session.query(Items).filter_by(name=item_name).one()
+    categories = session.query(Category).all()
+    if item:
+        creator = getUserInfo(item.user_id)
+    if 'username' not in login_session:
+        return render_template('publicitemdescription.html',
+                                item=item,
+                                category=category_name,
+                                categories=categories)
+    if creator.id != login_session['user_id']:
+        user = getUserInfo(login_session['user_id'])
+        return render_template('publicitemdescription.html',
+                                item=item,
+                                category=category_name,
+                                categories=categories,
+                                user=user)
+    else:
+        return render_template('itemdescription.html',
+                                item=item,
+                                category=category_name,
+                                categories=categories,
+                                creator=creator,
+                                user=user)
+```
+I think I stared at it for another few hours, kept on refreshing the page. It wasn't until I reset apache that it actually worked. Weird. I still don't know why that's the case.
+
+---
+###### Oauth with Google and Facebook
+Lastly, I added the domain, http://ec2-52-37-15-134.us-west-2.compute.amazonaws.com, to both the Google and Facebook developer consoles, and I enabled my app in Facebook. This solved my Oauth issues.
+
+
+#And that's it!
+If you made it this far, thank you very much, and I'm super sorry that this is so long, but I thought it the best way to explain how I approached this project. Honestly, I think P5 should have been after P3, since its the next logical step after P3 (create the app, then deploy it). Otherwise, this has been excellent, and I look forward to doing some more classes/nanodegrees in the future!
 
 
 ### Third Party Resources

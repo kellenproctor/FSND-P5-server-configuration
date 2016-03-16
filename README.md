@@ -204,7 +204,7 @@ To                         Action      From
 ```
 Good to go!
 
-#### Installing the Application
+#### Final Configuration
 The next few sections were covered by the Udacity course, but there were some great docs referred to by Allan and Kirk. I also took this in steps, setting up a couple test apps/files to make sure everything was working before cloning the project to the server. I'll talk about that as I go.
 ###### Apache
 Install Apache:
@@ -362,20 +362,157 @@ $ adduser catalog
 ```
 Confirm that the user 'catalog' exists, and we're all done with Postgresql!! For now...
 
+#### Installing the Application
+Alright, so at this point we've configured the server, installed and verified that Apache is working, installed and verified that Postgresql is working. The next step is to actually download the Application!
+
 ---
 ###### IMPORTANT NOTE ON DESIGN DECISIONS - VIRTUALENV - VAGRANT
 By this point, a couple of the tutorials and some of the forum posts recommended installing virtualenv for the P5. However, by the time I got to those recommendations, I had already installed a bunch of the dependencies globally on the server. Also, I don't have much experience with virtualenv. So for the sake of simplicity, I bypassed all those steps. In addition, P3 as it was, came with the vagrant "wrapper" if you will. So I cleaned up the directory structure of P3 by removing the files related to vagrant, and created a new github repository that would be used for this project with the code from P3.
 
 ---
 ###### Git
-I ran the following commands:
+Install and set global configurations:
+```
+$ sudo apt-get install git
+$ git config --global user.name "me"
+$ git config --global user.email "me@gmail.com"
 ```
 
+---
+###### Clone Github Repository with P3
+So, I was a bit anxious here, so I cloned the repository into the home directory (`~/`) for 'grader':
+```
+$ git clone https://github.com/kellenproctor/Catalog-for-P5.git
+```
+I then moved everything to the directory `/var/www/catalog/catalog/` which I had created earlier while configuring the test flask application.
+```
+$ sudo mv * /var/www/catalog/catalog/
+```
+Unfortunately, I decided to delete the remaining files, by `rm -rf *`, which included the `.git` directory, so that wasn't smart. Regardless, everything works perfectly anyway (end result), so I'm taking this as a warning for the future.
 
+---
+###### .htaccess and inaccessible .git
+I created a `.htaccess` file in `/var/www/catalog/` and put in the following:
+```
+$ sudo nano .htaccess
 
+# Inside nano
+RedirectMatch 404 /\.git
+```
+Saved and exited.
 
+---
+###### Configuring Postgresql with App
+Alright! So we have the app on the server, we have everything configured. The last step here, is to change every reference in `application.py`, `database_setup.py`, and `lotsofitems.py` from:
+```
+engine = create_engine('sqlite:///catalog.db')
+```
+to
+```
+engine = create_engine("postgresql://catalog:catalog@localhost/catalog")
+```
+Now the app can connect to the Postgresql database!!
 
+---
+###### Reconfigure Apache Files
+I changed `/var/www/catalog.wsgi` to this:
+```
+#!/usr/bin/python
+import sys
+import logging
+logging.basicConfig(stream=sys.stderr)
+sys.path.insert(0,"/var/www/catalog/")
 
+from catalog import app as application
+application.secret_key = 'Add your secret key'
+application.debug = True
+```
+
+And created a `catalog.conf` file in the directory `/etc/apache2/sites-available/` with this:
+```
+<VirtualHost *:80>
+      ServerName 52.37.15.134
+
+      ServerAdmin admin@52.37.15.134
+
+      WSGIScriptAlias / /var/www/catalog/catalog.wsgi
+      <Directory /var/www/catalog/catalog/>
+          Order allow,deny
+          Allow from all
+      </Directory>
+
+      Alias /static /var/www/catalog/catalog/static
+      <Directory /var/www/catalog/catalog/static/>
+          Order allow,deny
+          Allow from all
+      </Directory>
+
+      ErrorLog ${APACHE_LOG_DIR}/error.log
+      LogLevel debug
+      CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>
+```
+
+Configured and reset apache with the following commands:
+```
+# Make all existing sites-enabled disabled
+$ sudo a2dissite [sites-enabled.conf file]
+
+# Enable our catalog site
+$ sudo a2ensite /etc/apache2/sites-available/catalog.conf
+
+# Reset apache
+$ sudo service apache2 restart
+```
+And we're off the races!!! Next step, say a little prayer, yell "I am awaited in Valhalla!" tell my coworker to "Witness Me!!" then check out the link...
+
+---
+###### Check out the link
+And it works!!! move around a bit, and everything is excellent!! Game On, Wayne! Witness! (I just watched Mad Max again)
+
+#### Exceeds Expectations
+###### Configure Firewall to monitor for repeated unsuccessful login attempts and ban attackers
+I used [Fail2ban](https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04) on the recommendation of Norbert's resource list.
+Install Fail2ban:
+```
+$ sudo apt-get install fail2ban
+```
+Copy the default config file:
+```
+$ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+```
+Check and change the default parameters by opening the local config file. Norbert does recommend changing a couple parameters, but after reading the documentation, I opted instead to just make sure the ssh port sections were changed correctly from 22 to 2200.:
+```
+$ sudo vim /etc/fail2ban/jail.local
+```
+Finally, stop and restart the fail2ban service to apply changes:
+```
+$ sudo service fail2ban stop
+$ sudo service fail2ban start
+```
+
+---
+###### Include cron scripts to automatically manage package updates
+Great link from Norbert to the Ubuntu Documentation for the [unattended-upgrades](https://help.ubuntu.com/community/AutomaticSecurityUpdates) package.
+
+Install and enable the unattended-upgrades package:
+```
+$ sudo apt-get install unattended-upgrades
+$ sudo dpkg-reconfigure -plow unattended-upgrades
+```
+
+---
+###### Includes monitoring applications that provide automated feedback on application availability status and/or system security alerts.
+A lot of people recommended using [Glaces](http://glances.readthedocs.org/en/latest/glances-doc.html#introduction), so I did.
+
+Install and run glances:
+```
+$ sudo pip install Glances
+$ Glances
+```
+
+####Debugging
 ###### The `tail -f` command
 Allan and Kirk both mention using some variation of the `tail -20` command to view the log files in `/var/log/apache2/error.log`. This basically echo the last 20 lines of that log file to the shell. However, I recall a better method of doing this in a different project I worked on. So I googled it, and sure enough, there was a great explanation on Superuser (a part of StackExchange) for the [tail -f command](http://superuser.com/questions/229627/linux-command-line-utility-for-watching-log-files-live). Bascially, by running
 ```
@@ -428,10 +565,19 @@ And that did the trick!
 
 ####Postgresql
 [PostgreSQL: Documentation](http://www.postgresql.org/docs/9.3/interactive/tutorial.html)  
-[Digital Ocean: How to install and use postgresql on ubuntu vps](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04)  
-[Digital Ocean: How to secure postgresql on ubuntu vps](https://www.digitalocean.com/community/tutorials/how-to-secure-postgresql-on-an-ubuntu-vps)  
+[Digital Ocean: How to install and use PostgreSQL on Ubuntu vps](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04)  
+[Digital Ocean: How to secure postgresql on Ubuntu vps](https://www.digitalocean.com/community/tutorials/how-to-secure-postgresql-on-an-ubuntu-vps)  
 [Trackets Blog: PostgreSQL Basics by Example](http://blog.trackets.com/2013/08/19/postgresql-basics-by-example.html)  
 [Kill The Yak: Use PostgreSQL with Flask or Django](http://killtheyak.com/use-postgresql-with-django-flask/)
+
+####Fail2Ban
+[Digital Ocean: How to protect SSH with Fail2Ban on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04)
+
+####Unattended-Upgrades
+[Ubuntu Docs: Automatic Security Upgrades](https://help.ubuntu.com/community/AutomaticSecurityUpdates)
+
+####Glances
+[Glaces docs](http://glances.readthedocs.org/en/latest/glances-doc.html#introduction)
 
 ####Tail -f command
 [Superuser (stackexchange): Linux command line utility for watching log files live?](http://superuser.com/questions/229627/linux-command-line-utility-for-watching-log-files-live)
@@ -442,6 +588,6 @@ And that did the trick!
 ####Unable to Resolve Host x.x.x.x
 [Askubuntu: Error message when I run sudo: unable...](http://askubuntu.com/questions/59458/error-message-when-i-run-sudo-unable-to-resolve-host-none)
 
-####Markdown
+####Markdown: for this amazing README!
 [Github: Adam Pritchard's Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)  
 

@@ -35,11 +35,13 @@ Also, before we dive into this, hats off to Digital Ocean for some fantastic Com
 instead of the full  
 `ssh -i ~/.ssh/udacity_key.rsa root@52.37.15.134`  
 command (please note that I did set up a grader user, and most of the work done past the initial stages were with the grader user and `sudo`, this is just for example). So I found this great article at Nerderati called [Simplify your life with an ssh config file](http://nerderati.com/2011/03/17/simplify-your-life-with-an-ssh-config-file/), set up a config file at `~/.ssh/config`, and added the following to it
-```Host udacity  
+```bash
+Host udacity  
     Hostname 52.37.15.134  
     Port 2200  
     User root  
-    IdentityFile ~/.ssh/udacity_key.rsa```  
+    IdentityFile ~/.ssh/udacity_key.rsa
+```  
 This was super helpful
 3. 
 

@@ -41,6 +41,7 @@ Host udacity
    IdentityFile ~/.ssh/udacity_key.rsa
 ```  
 This was super helpful. Especially for quickly adding a bash environment for debugging (explained later)
+
 ---
 ######Add User Grader
 The Udacity course went over this very well. So did this Digital Ocean tutorial: [How to Add and Delete Users on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps). First

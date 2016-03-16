@@ -15,3 +15,7 @@ http://ec2-52-37-15-134.us-west-2.compute.amazonaws.com/
 ### Configuration Summary
 OK, so first I launched the virtual machine...
 
+[Test inline line ][1]
+
+
+[1]: http://google.com

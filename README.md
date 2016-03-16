@@ -15,7 +15,7 @@ Also here for copy and paste:
 http://ec2-52-37-15-134.us-west-2.compute.amazonaws.com/
 
 
-### Configuration Summary
+## Configuration Summary
 OK, so I'm going to take this step by step, highlighting both the way I got everything to work, in addition to any errors or issues I got stuck on. There were quite a few.
 
 Also, first off, I want to point out the following were excellent resource lists, which I used extensively to find documentation and search for solutions to common problems I had throughout the project:
@@ -32,8 +32,8 @@ Norbert does mention that this is basically a walkthrough, and it is very easy t
 Also, before we dive into this, hats off to Digital Ocean for some fantastic Community tutorials. I think most of the links in the Resource Lists, and some other ones I used, came from them. Also, thanks a bunch to Michael for the Configuring Linux Web Servers class. That was tremendously helpful to get up to speed. If I don't mention a source for a particular section, it's most likely because it was covered in his class. Alright, here we go:
 
 
-#### Basic Configuration
-###### Launch Virtual Machine
+### Basic Configuration
+##### Launch Virtual Machine
 I set up the Virtual Machine, followed steps 1-5 in the Udacity Development environment guide, no brainer. For the next few steps, I did everything as root, since I hadn't set up the user "grader" yet. Everything that follows, up until the creation of the user "grader" was done as "root"
 
 While working on the project, I realized that I had to use the `ssh` command a lot, and I remember setting up some sort of file to make it easier to do on a previous unrelated project, so all you had to type was  
@@ -56,7 +56,7 @@ Host udacity
 This was super helpful. Especially for quickly adding a bash environment for debugging (explained later)
 
 ---
-###### Update currently installed packages
+##### Update currently installed packages
 Thanks to Michael, and the Configuring Linux Web Servers class, this was simply the following:
 ```
 $ apt-get update      # To update ubuntu's package lists.
@@ -65,14 +65,14 @@ $ apt-get autoremove  # To remove any unnecessary packages.
 ```
 
 ---
-###### Configure local timezone to UTC
+##### Configure local timezone to UTC
 This was done automatically when the virtual machine was launched. I don't know why, but I double checked this after reading [Ubuntu's Time Management Docs](https://help.ubuntu.com/community/UbuntuTime#Using_the_Command_Line_.28terminal.29). In essence:
 ```
 $ cat /etc/timezone # To show the current timezone setting
 ```
 
 ---
-###### Add User "grader"
+##### Add User "grader"
 The Udacity course went over this very well. So did this Digital Ocean tutorial: [How to Add and Delete Users on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps). First, since we're still logged in as root:
 ```
 # Create the user grader and use "grader" as the password,
@@ -84,7 +84,7 @@ $ adduser grader
 ```
 
 ---
-###### Grant "grader" sudo permissions
+##### Grant "grader" sudo permissions
 Again, Michael did a great job of covering this in the class. I also want to note that a lot of the resource lists refer to [this Digital Ocean article on adding and deleting users](https://www.digitalocean.com/community/tutorials/how-to-add-and-delete-users-on-an-ubuntu-14-04-vps), which details how to use `visudo` for accomplishing this, in addition to methods for assigned users to the group `%sudo`, but I used Michael's method of creating a file in the `/etc/sudoers.d/` directory instead.  
 ```
 # Create 'grader' file in /etc/sudoers.d/ directory
@@ -98,10 +98,10 @@ And adding the following line
 grader ALL=(ALL) NOPASSWD:ALL
 ```
 
-#### Securing the Server
+### Securing the Server
 OK, so I had about two hours of fun on this step before figuring out the solution below. I'll explain my mistakes as I go.
 
-###### Generating Keygen pair for 'grader'
+##### Generating Keygen pair for 'grader'
 This is about the time I thought it would be smart to start using the grader user instead of root for everything. Kirk posted two great articles in his resource list, [ArchLinux: SSH Keys](https://wiki.archlinux.org/index.php/SSH_keys) and [Digital Ocean: How to set up SSH Keys](https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2). In addition, Michael and Udacity. So, I set up a local keygen pair saved in the `~/.ssh/` directory as `./udacityGrader`.:
 ```
 # Create the keygen pair
@@ -137,7 +137,7 @@ $ chgrp grader /home/grader/.ssh /home/grader/.ssh/authorized_keys
 Logging in as grader was a success!! So I changed the SSH config file on my local machine (as described above), logged out of my 'root' shell session, and did the rest of this as the user 'grader'
 
 ---
-###### SSHD Config File
+##### SSHD Config File
 Moving on, I locked out the root user and disabled password authentication to the server. Opening the `/etc/ssh/sshd_config` file:
 ```
 # Changing PermitRootLogin from without-password to:
@@ -159,7 +159,7 @@ I double checked this by trying to ssh as 'root' and ssh as 'grader' without a k
 I think I also need to mention here that I ran into trouble initially because I added `Authusers grader` to the end of the file. I found it in one of my sources. However, I hadn't configured the file permissions correctly for ~/.ssh/authorized_keys (as explained above), then I logged out of the 'root' shell session. Basically I locked myself out. SO, I had to delete the virtual machine and start over. I caught my mistake this time though.
 
 ---
-###### Ports
+##### Ports
 OK, opened up the `/etc/ssh/sshd_config` file:
 ```
 # What ports, IPs and protocols we listen for
@@ -173,7 +173,7 @@ $ sudo service ssh restart
 done.
 
 ---
-###### UFW
+##### UFW
 Issued the following commands:
 ```
 # Base configuration
@@ -204,9 +204,9 @@ To                         Action      From
 ```
 Good to go!
 
-#### Final Configuration
+### Final Configuration
 The next few sections were covered by the Udacity course, but there were some great docs referred to by Allan and Kirk. I also took this in steps, setting up a couple test apps/files to make sure everything was working before cloning the project to the server. I'll talk about that as I go.
-###### Apache
+##### Apache
 Install Apache:
 ```
 $ sudo apt-get install apache2
@@ -214,7 +214,7 @@ $ sudo apt-get install apache2
 Confirm that it's working by going to http://52.37.15.134. It works!
 
 ---
-###### Apache mod_wsgi
+##### Apache mod_wsgi
 Install mod_wsgi:
 ```
 $ sudo apt-get install libapache2-mod-wsgi
@@ -252,7 +252,7 @@ def application(environ, start_response):
 and checked it by going to my site link. It worked! At this point, I know I have apache working, and I know I have mod_wsgi working with a sample app.
 
 ---
-###### Flask app
+##### Flask app
 At this point, I basically just used an article from [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-deploy-a-flask-application-on-an-ubuntu-vps) to configure and test a sample Flask application with the current infrastructure. It worked, but for the sake of the size of this README, I'll just go over the flask dependencies. This was pretty simple. I basically ran all the commands in the `pg_config.sh` for P3. I jumped the gun a little bit, because I hadn't installed or configured the postgresql database, but the functionality was there:
 ```
 $ sudo apt-get -qqy update
@@ -265,7 +265,7 @@ $ sudo pip install httplib2
 ```
 
 ---
-###### The `su -` command
+##### The `su -` command
 Before I get to postgresql, I'd like to digress. I found this article on [the su Command](http://www.linfo.org/su.html) to be incredibly useful when having to move between the user 'grader' and the user 'postgres' during the database configuration.
 ```
 $ sudo su - grader
@@ -276,7 +276,7 @@ logout
 I especially thought that the use of the dash '-' character in the command, whereby the new session of the user being switched to is opened with that user's shell and environment variables, was totally cool. It was also great to find out that you could simply `exit` or `logout` or `ctrl-d` to get back to your original shell session. Anyway, this was very useful for configuring the Postgresql database, as explained below.
 
 ---
-###### POSTGRESQL - install
+##### POSTGRESQL - install
 Alright, I'm going to just refer you down to the Third Party Resources section below to check out the articles I used for this one. I basically got super confused about postgresql roles vs users for a long time, before it clicked. And reading a bunch of different articles, even the docs, helped to explain everything. So, here goes
 
 Install Postgresql:
@@ -291,11 +291,11 @@ $ sudo apt-get install pyscopg2
 ```
 
 ---
-###### POSTGRESQL - Do Not Allow Remote Connections
+##### POSTGRESQL - Do Not Allow Remote Connections
 This [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-secure-postgresql-on-an-ubuntu-vps) article was the basis for this part. Rather than copy and paste, let me just say that we can check the `/etc/postgresql/9.1/main/pg_hba.conf` file to see the postgresql network configuration. By default postgresql doesn't allow remote connections, which is awesome for this project. 
 
 ---
-###### POSTGRESQL - configure
+##### POSTGRESQL - configure
 At this point, we switch over to the user 'postgres' to set configure the postresql database:
 ```
 $ sudo su - postgres
@@ -350,7 +350,7 @@ $ exit
 ```
 
 ---
-###### POSTGRESQL - create linux user 'catalog'
+##### POSTGRESQL - create linux user 'catalog'
 Great! So now that we have configured PostgreSQL, we also actually have to create a linux user called 'catalog'. This [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-14-04) does a great job of explaining why. In short, Postgresql assumes that the current linux user will also have a matching role and database.
 
 Anyway, so we do the same commands as we did for 'grader', but for 'catalog':
@@ -362,15 +362,15 @@ $ adduser catalog
 ```
 Confirm that the user 'catalog' exists, and we're all done with Postgresql!! For now...
 
-#### Installing the Application
+### Installing the Application
 Alright, so at this point we've configured the server, installed and verified that Apache is working, installed and verified that Postgresql is working. The next step is to actually download the Application!
 
 ---
-###### IMPORTANT NOTE ON DESIGN DECISIONS - VIRTUALENV - VAGRANT
-By this point, a couple of the tutorials and some of the forum posts recommended installing virtualenv for the P5. However, by the time I got to those recommendations, I had already installed a bunch of the dependencies globally on the server. Also, I don't have much experience with virtualenv. So for the sake of simplicity, I bypassed all those steps. In addition, P3 as it was, came with the vagrant "wrapper" if you will. So I cleaned up the directory structure of P3 by removing the files related to vagrant, and created a new github repository that would be used for this project with the code from P3.
+##### IMPORTANT NOTE ON DESIGN DECISIONS - VIRTUALENV - VAGRANT
+By this point, a couple of the tutorials and some of the forum posts recommended installing virtualenv for the P5. However, by the time I got to those recommendations, I had already installed a bunch of the dependencies globally on the server. Also, I don't have much experience with virtualenv. So for the sake of simplicity, I bypassed all those steps. In addition, P3 as it was, came with the vagrant "wrapper" if you will. So I cleaned up the directory structure of P3 by removing the files related to vagrant, and created a new github repository that would be used for this project with the code from P3. I think this is a good idea for this server, since there is only one app running on this, and I'm the only one working on it. I understand that if there was a situation is which multiple apps/modules needed different dependencies, or there were multiple devs, then it might be a good idea to use both virtualenv and vagrant.
 
 ---
-###### Git
+##### Git
 Install and set global configurations:
 ```
 $ sudo apt-get install git
@@ -379,7 +379,7 @@ $ git config --global user.email "me@gmail.com"
 ```
 
 ---
-###### Clone Github Repository with P3
+##### Clone Github Repository with P3
 So, I was a bit anxious here, so I cloned the repository into the home directory (`~/`) for 'grader':
 ```
 $ git clone https://github.com/kellenproctor/Catalog-for-P5.git
@@ -391,7 +391,7 @@ $ sudo mv * /var/www/catalog/catalog/
 Unfortunately, I decided to delete the remaining files, by `rm -rf *`, which included the `.git` directory, so that wasn't smart. Regardless, everything works perfectly anyway (end result), so I'm taking this as a warning for the future.
 
 ---
-###### .htaccess and inaccessible .git
+##### .htaccess and inaccessible .git
 I created a `.htaccess` file in `/var/www/catalog/` and put in the following:
 ```
 $ sudo nano .htaccess
@@ -402,7 +402,7 @@ RedirectMatch 404 /\.git
 Saved and exited.
 
 ---
-###### Configuring Postgresql with App
+##### Configuring Postgresql with App
 Alright! So we have the app on the server, we have everything configured. The last step here, is to change every reference in `application.py`, `database_setup.py`, and `lotsofitems.py` from:
 ```
 engine = create_engine('sqlite:///catalog.db')
@@ -414,7 +414,7 @@ engine = create_engine("postgresql://catalog:catalog@localhost/catalog")
 Now the app can connect to the Postgresql database!!
 
 ---
-###### Initialize Database and Data
+##### Initialize Database and Data
 Alright, now to actually create the tables, and initialize the database with some data!
 
 First, move to the `/catalog/` directory holding the app files:
@@ -430,14 +430,14 @@ $ python lotsofitems.py
 No errors. Score!!
 
 ---
-###### Rename application.py
+##### Rename application.py
 Simply, rename `application.py` to `__init__.py`
 ```
 $ sudo mv application.py __init__.py
 ```
 
 ---
-###### Reconfigure Apache Files
+##### Reconfigure Apache Files
 I changed `/var/www/catalog.wsgi` to this:
 ```
 #!/usr/bin/python
@@ -491,11 +491,11 @@ $ sudo service apache2 restart
 And we're off the races!!! Next step, say a little prayer, yell "I am awaited in Valhalla!" tell my coworker to "Witness Me!!" then check out the link...
 
 ---
-###### Check out the link
+##### Check out the link
 And it works!!! move around a bit, and everything is excellent!! Game On, Wayne! Witness! (I just watched Mad Max again)
 
-#### Exceeds Expectations
-###### Configure Firewall to monitor for repeated unsuccessful login attempts and ban attackers
+### Exceeds Expectations
+##### Configure Firewall to monitor for repeated unsuccessful login attempts and ban attackers
 I used [Fail2ban](https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04) on the recommendation of Norbert's resource list.
 Install Fail2ban:
 ```
@@ -516,7 +516,7 @@ $ sudo service fail2ban start
 ```
 
 ---
-###### Include cron scripts to automatically manage package updates
+##### Include cron scripts to automatically manage package updates
 Great link from Norbert to the Ubuntu Documentation for the [unattended-upgrades](https://help.ubuntu.com/community/AutomaticSecurityUpdates) package.
 
 Install and enable the unattended-upgrades package:
@@ -526,7 +526,7 @@ $ sudo dpkg-reconfigure -plow unattended-upgrades
 ```
 
 ---
-###### Includes monitoring applications that provide automated feedback on application availability status and/or system security alerts.
+##### Includes monitoring applications that provide automated feedback on application availability status and/or system security alerts.
 A lot of people recommended using [Glaces](http://glances.readthedocs.org/en/latest/glances-doc.html#introduction), so I did.
 
 Install and run glances:
@@ -535,8 +535,8 @@ $ sudo pip install Glances
 $ Glances
 ```
 
-####Debugging
-###### The `tail -f` command
+###Debugging
+##### The `tail -f` command
 Allan and Kirk both mention using some variation of the `tail -20` command to view the log files in `/var/log/apache2/error.log`. This basically echo the last 20 lines of that log file to the shell. However, I recall a better method of doing this in a different project I worked on. So I googled it, and sure enough, there was a great explanation on Superuser (a part of StackExchange) for the [tail -f command](http://superuser.com/questions/229627/linux-command-line-utility-for-watching-log-files-live). Bascially, by running
 ```
 $ sudo tail -f /var/log/apache2/error.log
@@ -544,8 +544,8 @@ $ sudo tail -f /var/log/apache2/error.log
 You get a 'live' view of the log file. So I could set up a shell session to run this while I tried to debug my app. Basically, the `-f` option enable monitoring, which sets up a process to update the shell if there are any changes made to the log file.
 
 
-### Minor Issues
-###### Hostname issue
+## Minor Issues
+##### Hostname issue
 So, at some point, and I'm not sure when it started, there was this really annoying thing where every time I ran `sudo`, it would generate this message
 ```
 sudo: unable to resolve host ip-10-20-11-238
@@ -560,7 +560,7 @@ Luckily Norbert ran into the same issue, and post an article from [Askubuntu](ht
 And that did the trick!
 
 ---
-###### Issue with showItems function
+##### Issue with showItems function
 Alright, so I spent a day fixing this problem. I was super giddy about the site working in the first place, then my Dad tried to open up the description of a specific item... and it crashed. I couldn't figure out what the problem was. I eventually discovered, by looking at the logs and some judicious googling (that's really fun to say out loud) that my original code was throwing a `Keyerror: user_id blah blah`, so I modified my `__init__.py` file from this:
 ```python
 # Show the specifics of an item
@@ -616,7 +616,7 @@ def showItem(category_name, item_name):
 I think I stared at it for another few hours, kept on refreshing the page. It wasn't until I reset apache that it actually worked. Weird. I still don't know why that's the case.
 
 ---
-###### Oauth with Google and Facebook
+##### Oauth with Google and Facebook
 Lastly, I added the domain, http://ec2-52-37-15-134.us-west-2.compute.amazonaws.com, to both the Google and Facebook developer consoles, and I enabled my app in Facebook. This solved my Oauth issues.
 
 
@@ -624,7 +624,7 @@ Lastly, I added the domain, http://ec2-52-37-15-134.us-west-2.compute.amazonaws.
 If you made it this far, thank you very much, and I'm super sorry that this is so long, but I thought it the best way to explain how I approached this project. Honestly, I think P5 should have been after P3, since its the next logical step after P3 (create the app, then deploy it). Otherwise, this has been excellent, and I look forward to doing some more classes/nanodegrees in the future!
 
 
-### Third Party Resources
+## Third Party Resources
 ####Resource Lists
 [Udacity: Allan's Markedly underwhelming and potentially wrong resource list for P5](https://discussions.udacity.com/t/markedly-underwhelming-and-potentially-wrong-resource-list-for-p5/8587)  
 [Udacity: Kirk Brunson's Project 5 Resources](https://discussions.udacity.com/t/project-5-resources/28343)  
